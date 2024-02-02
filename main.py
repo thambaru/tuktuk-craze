@@ -4,6 +4,7 @@ pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
+SCREEN_CENTER = SCREEN_WIDTH // 2
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Car Game")
@@ -34,14 +35,14 @@ def get_scaled_image(image, scale, width=0, height=0):
     )
 
 
-class Road():
+class Road:
     def __init__(self, scale=2):
         self.image = pygame.image.load("assets/images/road.png").convert_alpha()
         self.image = get_scaled_image(self.image, scale)
         self.scale = scale
 
     def draw(self):
-        img_x = (SCREEN_WIDTH // 2) - (self.image.get_width() * self.scale // 2)
+        img_x = (SCREEN_CENTER) - (self.image.get_width() * self.scale // 2)
         img_y = 0
         for i in range(SCREEN_HEIGHT // self.image.get_height() + 1):
             img_y = i * self.image.get_height()
@@ -69,13 +70,19 @@ class Car(pygame.sprite.Sprite):
         dy = 0
 
         if self.char_type == "player":
-            if moving_up:
+            if moving_up and self.rect.y > 0:
                 dy = self.speed * -1
-            if moving_down:
+            if moving_down and self.rect.y < SCREEN_HEIGHT - self.image.get_height():
                 dy = self.speed * 1
-            if moving_left:
+            if (
+                moving_left
+                and self.rect.x > (SCREEN_CENTER - self.image.get_width()) - 125
+            ):
                 dx = self.speed * -1
-            if moving_right:
+            if (
+                moving_right
+                and self.rect.x < (SCREEN_CENTER + self.image.get_width()) + 75
+            ):
                 dx = self.speed * 1
         else:
             dy = self.speed * 1
@@ -84,8 +91,8 @@ class Car(pygame.sprite.Sprite):
         self.rect.y += dy
 
 
-player = Car("player", SCREEN_WIDTH // 2, SCREEN_HEIGHT - 70, 0.8, 5)
-enemy = Car("enemy-0", SCREEN_WIDTH // 2, 0, 0.8, 2)
+player = Car("player", SCREEN_CENTER, SCREEN_HEIGHT - 70, 0.8, 5)
+enemy = Car("enemy-0", SCREEN_CENTER, 0, 0.8, 2)
 
 run = True
 while run:
