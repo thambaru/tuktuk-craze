@@ -28,6 +28,7 @@ curses = [
     "Assen daanna epa",
     "Lan unata simbinna epa",
     "Ehata gannawako poddak",
+    "Onna onna balagena!!"
 ]
 
 
@@ -87,7 +88,7 @@ class Car(pygame.sprite.Sprite):
         self.lives = 1
         self.alive = True
         self.score = 0
-        self.curse = random.choices(curses)[0]
+        self.isGoodDriver = random.choice([True, False])
 
         self.image = pygame.image.load(
             f"assets/images/{self.char_type}.png"
@@ -95,7 +96,6 @@ class Car(pygame.sprite.Sprite):
         self.image = get_scaled_image(self.image, scale)
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-        self.vision = pygame.Rect(0, 0, 150, self.rect.h)
 
     def draw(self):
         screen.blit(self.image, self.rect)
@@ -131,16 +131,11 @@ class Car(pygame.sprite.Sprite):
         else:
             dy = self.speed * 1
 
-            self.vision.center = (self.rect.x + 10, self.rect.y + 100)
-            # draw vision to see the collision
-            # pygame.draw.rect(screen, (255, 0, 0), self.vision)
+            self.curse()
 
             if self.rect.y > SCREEN_HEIGHT:
                 self.kill()
                 player.score += 5
-
-            if self.vision.colliderect(player.rect):
-                drawText(self.curse, WHITE, self.rect.x, self.rect.y - 20)
 
         self.rect.x += dx
         self.rect.y += dy
@@ -167,6 +162,24 @@ class Car(pygame.sprite.Sprite):
                     SCREEN_CENTER,
                     (SCREEN_HEIGHT + 50) / 2,
                 )
+    
+    def curse(self):
+        if self.isGoodDriver:
+            return
+        
+        if not hasattr(self, "curseChoice"):
+            self.curseChoice = random.choices(curses)[0]
+
+        self.vision = pygame.Rect(0, 0, 150, self.rect.h)
+        self.vision.center = (self.rect.x + 10, self.rect.y + 100)
+        
+        # draw vision to see the collision
+        # pygame.draw.rect(screen, (255, 0, 0), self.vision)
+        
+        if self.vision.colliderect(player.rect):
+            drawText(self.curseChoice, WHITE, self.rect.x, self.rect.y - 20)
+
+
 
 
 enemy_group = pygame.sprite.Group()
