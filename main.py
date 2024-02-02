@@ -1,4 +1,5 @@
 import pygame
+import random
 
 pygame.init()
 
@@ -16,6 +17,8 @@ moving_up = False
 moving_down = False
 moving_left = False
 moving_right = False
+
+enemy_group = pygame.sprite.Group()
 
 BG = (66, 173, 55)
 
@@ -84,15 +87,38 @@ class Car(pygame.sprite.Sprite):
                 and self.rect.x < (SCREEN_CENTER + self.image.get_width()) + 75
             ):
                 dx = self.speed * 1
+            
+            if self.rect.y > SCREEN_HEIGHT:
+                self.rect.y = 0
+                self.rect.x = random.randint(SCREEN_CENTER - 100, SCREEN_CENTER + 100)
         else:
             dy = self.speed * 1
 
         self.rect.x += dx
         self.rect.y += dy
 
+        
+
+
+enemy_cooldown = 0
+def create_enemies():
+    global enemy_cooldown
+    if enemy_cooldown == 0:
+        enemy_group.add(
+            Car(
+                "enemy-0",
+                random.randint(SCREEN_CENTER - 150, SCREEN_CENTER + 150),
+                -80,
+                0.6,
+                2,
+            )
+        )
+        enemy_cooldown = 80
+    else:
+        enemy_cooldown -= 1
+
 
 player = Car("player", SCREEN_CENTER, SCREEN_HEIGHT - 70, 0.8, 5)
-enemy = Car("enemy-0", SCREEN_CENTER, 0, 0.8, 2)
 
 run = True
 while run:
@@ -100,11 +126,12 @@ while run:
 
     draw_bg()
 
-    player.draw()
     player.update()
+    player.draw()
 
-    enemy.draw()
-    enemy.update()
+    create_enemies()
+    enemy_group.update()
+    enemy_group.draw(screen)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
