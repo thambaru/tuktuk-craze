@@ -22,6 +22,14 @@ BG = (66, 173, 55)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+curses = [
+    "Koheda Malli Yanney!",
+    "Apoo Tuk Tuk kaarayo",
+    "Assen daanna epa",
+    "Lan unata simbinna epa",
+    "Ehata gannawako poddak",
+]
+
 
 def draw_bg():
     screen.fill(BG)
@@ -79,6 +87,7 @@ class Car(pygame.sprite.Sprite):
         self.lives = 1
         self.alive = True
         self.score = 0
+        self.curse = random.choices(curses)[0]
 
         self.image = pygame.image.load(
             f"assets/images/{self.char_type}.png"
@@ -86,6 +95,7 @@ class Car(pygame.sprite.Sprite):
         self.image = get_scaled_image(self.image, scale)
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.vision = pygame.Rect(0, 0, 150, self.rect.h)
 
     def draw(self):
         screen.blit(self.image, self.rect)
@@ -121,9 +131,16 @@ class Car(pygame.sprite.Sprite):
         else:
             dy = self.speed * 1
 
+            self.vision.center = (self.rect.x + 10, self.rect.y + 100)
+            # draw vision to see the collision
+            # pygame.draw.rect(screen, (255, 0, 0), self.vision)
+
             if self.rect.y > SCREEN_HEIGHT:
                 self.kill()
-                player.score += 10
+                player.score += 5
+
+            if self.vision.colliderect(player.rect):
+                drawText(self.curse, WHITE, self.rect.x, self.rect.y - 20)
 
         self.rect.x += dx
         self.rect.y += dy
@@ -151,6 +168,7 @@ class Car(pygame.sprite.Sprite):
                     (SCREEN_HEIGHT + 50) / 2,
                 )
 
+
 enemy_group = pygame.sprite.Group()
 enemy_cooldown = 0
 enemy_cooldown_reducing_val = 1
@@ -165,7 +183,7 @@ def create_enemies():
         enemy_cooldown_reducing_val += 0.01
         for enemy in enemy_group:
             enemy.speed += 0.01
-    
+
     if enemy_cooldown <= 0:
         enemy_group.add(
             Car(
