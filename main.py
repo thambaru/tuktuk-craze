@@ -8,7 +8,7 @@ SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 SCREEN_CENTER = SCREEN_WIDTH // 2
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Car Game")
+pygame.display.set_caption("TukTuk Craze")
 
 clock = pygame.time.Clock()
 FPS = 60
@@ -18,25 +18,33 @@ moving_down = False
 moving_left = False
 moving_right = False
 
-enemy_group = pygame.sprite.Group()
-
 BG = (66, 173, 55)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 
 def draw_bg():
     screen.fill(BG)
     Road().draw()
+    drawTextWithBg(f"HIGH SCORE: {player.score}", 20, 20)
 
 
-font = font = pygame.font.SysFont("Comic Sans MS", 30)
+font = pygame.font.SysFont("Comic Sans MS", 30)
 
 
-def drawText(text, font, surface, x, y):
-    textobj = font.render(text, 1, WHITE)
+def drawText(text, color=WHITE, x=0, y=0, font=font, draw=True):
+    textobj = font.render(text, 1, color)
     textrect = textobj.get_rect()
     textrect.topleft = (x, y)
-    surface.blit(textobj, textrect)
+    if draw:
+        screen.blit(textobj, textrect)
+    return (textobj, textrect)
+
+
+def drawTextWithBg(text, x=0, y=0, textColor=BLACK, bgColor=WHITE):
+    text = drawText(text, textColor, x, y, font, False)
+    pygame.draw.rect(screen, bgColor, (x - 10, x - 10, text[1].w + 20, y + 20), 0, 15)
+    screen.blit(text[0], text[1])
 
 
 def get_scaled_image(image, scale, width=0, height=0):
@@ -70,6 +78,7 @@ class Car(pygame.sprite.Sprite):
         self.speed = speed
         self.lives = 1
         self.alive = True
+        self.score = 0
 
         self.image = pygame.image.load(
             f"assets/images/{self.char_type}.png"
@@ -107,54 +116,69 @@ class Car(pygame.sprite.Sprite):
                 self.rect.x = random.randint(SCREEN_CENTER - 100, SCREEN_CENTER + 100)
 
             # Check collision with enemies
-            if pygame.sprite.spritecollide(self, enemy_group, False):
-                self.lives -= 1
-                enemy_group.empty()
-                self.rect.y = SCREEN_HEIGHT - self.image.get_height()
-                self.rect.x = SCREEN_CENTER
+            self.check_collision()
 
-                if self.lives == 0:
-                    self.alive = False
-                    self.kill()
-                    drawText(
-                        "Game over!",
-                        font,
-                        screen,
-                        (SCREEN_CENTER),
-                        (SCREEN_HEIGHT / 2),
-                    )
-                    drawText(
-                        "Press any key to exit.",
-                        font,
-                        screen,
-                        SCREEN_CENTER,
-                        (SCREEN_HEIGHT + 50) / 2,
-                    )
         else:
             dy = self.speed * 1
+
+            if self.rect.y > SCREEN_HEIGHT:
+                self.kill()
+                player.score += 10
 
         self.rect.x += dx
         self.rect.y += dy
 
+    def check_collision(self):
+        if pygame.sprite.spritecollide(self, enemy_group, False):
+            self.lives -= 1
+            enemy_group.empty()
+            self.rect.y = SCREEN_HEIGHT - self.image.get_height()
+            self.rect.x = SCREEN_CENTER
 
+            if self.lives == 0:
+                self.alive = False
+                self.kill()
+                drawText(
+                    "Game over!",
+                    WHITE,
+                    (SCREEN_CENTER),
+                    (SCREEN_HEIGHT / 2),
+                )
+                drawText(
+                    "Press any key to exit.",
+                    WHITE,
+                    SCREEN_CENTER,
+                    (SCREEN_HEIGHT + 50) / 2,
+                )
+
+enemy_group = pygame.sprite.Group()
 enemy_cooldown = 0
+enemy_cooldown_reducing_val = 1
+enemy_speed = 2
 
 
 def create_enemies():
-    global enemy_cooldown
-    if enemy_cooldown == 0:
+    global enemy_cooldown, enemy_cooldown_reducing_val, enemy_speed
+
+    if player.score != 0 and player.score % 100 == 0:
+        enemy_speed += 0.01
+        enemy_cooldown_reducing_val += 0.01
+        for enemy in enemy_group:
+            enemy.speed += 0.01
+    
+    if enemy_cooldown <= 0:
         enemy_group.add(
             Car(
-                "enemy-%s" % random.randint(0, 3),
+                "enemy-%s" % random.randint(0, 4),
                 random.randint(SCREEN_CENTER - 150, SCREEN_CENTER + 150),
                 -80,
                 0.6,
-                2,
+                enemy_speed,
             )
         )
         enemy_cooldown = 80
     else:
-        enemy_cooldown -= 1
+        enemy_cooldown -= enemy_cooldown_reducing_val
 
 
 player = Car("player", SCREEN_CENTER, SCREEN_HEIGHT - 70, 0.8, 5)
