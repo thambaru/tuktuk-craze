@@ -35,7 +35,7 @@ curses = [
 def draw_bg():
     screen.fill(BG)
     Road().draw()
-    drawTextWithBg(f"HIGH SCORE: {player.score}", 20, 20)
+    drawTextWithBg(f"SCORE: {player.score}", 20, 20)
 
 
 font = pygame.font.SysFont("Comic Sans MS", 30)
