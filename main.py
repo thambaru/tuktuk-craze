@@ -106,7 +106,7 @@ def create_enemies():
     if enemy_cooldown == 0:
         enemy_group.add(
             Car(
-                "enemy-0",
+                "enemy-%s" % random.randint(0,3),
                 random.randint(SCREEN_CENTER - 150, SCREEN_CENTER + 150),
                 -80,
                 0.6,
