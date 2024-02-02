@@ -21,11 +21,22 @@ moving_right = False
 enemy_group = pygame.sprite.Group()
 
 BG = (66, 173, 55)
+WHITE = (255, 255, 255)
 
 
 def draw_bg():
     screen.fill(BG)
     Road().draw()
+
+
+font = font = pygame.font.SysFont("Comic Sans MS", 30)
+
+
+def drawText(text, font, surface, x, y):
+    textobj = font.render(text, 1, WHITE)
+    textrect = textobj.get_rect()
+    textrect.topleft = (x, y)
+    surface.blit(textobj, textrect)
 
 
 def get_scaled_image(image, scale, width=0, height=0):
@@ -57,6 +68,8 @@ class Car(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.char_type = char_type
         self.speed = speed
+        self.lives = 1
+        self.alive = True
 
         self.image = pygame.image.load(
             f"assets/images/{self.char_type}.png"
@@ -73,6 +86,7 @@ class Car(pygame.sprite.Sprite):
         dy = 0
 
         if self.char_type == "player":
+            # Player controls
             if moving_up and self.rect.y > 0:
                 dy = self.speed * -1
             if moving_down and self.rect.y < SCREEN_HEIGHT - self.image.get_height():
@@ -87,26 +101,51 @@ class Car(pygame.sprite.Sprite):
                 and self.rect.x < (SCREEN_CENTER + self.image.get_width()) + 75
             ):
                 dx = self.speed * 1
-            
+
             if self.rect.y > SCREEN_HEIGHT:
                 self.rect.y = 0
                 self.rect.x = random.randint(SCREEN_CENTER - 100, SCREEN_CENTER + 100)
+
+            # Check collision with enemies
+            if pygame.sprite.spritecollide(self, enemy_group, False):
+                self.lives -= 1
+                enemy_group.empty()
+                self.rect.y = SCREEN_HEIGHT - self.image.get_height()
+                self.rect.x = SCREEN_CENTER
+
+                if self.lives == 0:
+                    self.alive = False
+                    self.kill()
+                    drawText(
+                        "Game over!",
+                        font,
+                        screen,
+                        (SCREEN_CENTER),
+                        (SCREEN_HEIGHT / 2),
+                    )
+                    drawText(
+                        "Press any key to exit.",
+                        font,
+                        screen,
+                        SCREEN_CENTER,
+                        (SCREEN_HEIGHT + 50) / 2,
+                    )
         else:
             dy = self.speed * 1
 
         self.rect.x += dx
         self.rect.y += dy
 
-        
-
 
 enemy_cooldown = 0
+
+
 def create_enemies():
     global enemy_cooldown
     if enemy_cooldown == 0:
         enemy_group.add(
             Car(
-                "enemy-%s" % random.randint(0,3),
+                "enemy-%s" % random.randint(0, 3),
                 random.randint(SCREEN_CENTER - 150, SCREEN_CENTER + 150),
                 -80,
                 0.6,
@@ -125,6 +164,12 @@ while run:
     clock.tick(FPS)
 
     draw_bg()
+
+    if not player.alive:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                run = False
+        continue
 
     player.update()
     player.draw()
