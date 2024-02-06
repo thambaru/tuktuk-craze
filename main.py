@@ -1,11 +1,14 @@
 import pygame
 import random
+import os
 
 pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 SCREEN_CENTER = SCREEN_WIDTH // 2
+
+IMAGES_DIR = "assets/images"
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("TukTuk Craze")
@@ -28,7 +31,7 @@ curses = [
     "Assen daanna epa",
     "Lan unata simbinna epa",
     "Ehata gannawako poddak",
-    "Onna onna balagena!!"
+    "Onna onna balagena!!",
 ]
 
 
@@ -68,7 +71,7 @@ def get_scaled_image(image, scale, width=0, height=0):
 
 class Road:
     def __init__(self, scale=2):
-        self.image = pygame.image.load("assets/images/road.png").convert_alpha()
+        self.image = pygame.image.load(f"{IMAGES_DIR}/road.png").convert_alpha()
         self.image = get_scaled_image(self.image, scale)
         self.scale = scale
 
@@ -85,26 +88,76 @@ class Car(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.char_type = char_type
         self.speed = speed
-        self.lives = 1
+        self.scale = scale
+        self.lives = 2
         self.alive = True
         self.score = 0
+        self.death_animation_list = []
+        self.death_animation_frame_index = 1
+        self.death_animation_repitition = 0
+        self.update_time = pygame.time.get_ticks()
         self.isGoodDriver = random.choice([True, False])
 
-        self.image = pygame.image.load(
-            f"assets/images/{self.char_type}.png"
-        ).convert_alpha()
-        self.image = get_scaled_image(self.image, scale)
+        self.image = self.get_alive_image()
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
+        num_of_frames = len(os.listdir(f"{IMAGES_DIR}/death"))
+        for i in range(1, num_of_frames):
+            img = pygame.image.load(f"{IMAGES_DIR}/death/exp{i}.png").convert_alpha()
+            self.death_animation_list.append(img)
+
+    def get_alive_image(self):
+        img = pygame.image.load(f"{IMAGES_DIR}/{self.char_type}.png").convert_alpha()
+        return get_scaled_image(img, self.scale)
+
     def draw(self):
         screen.blit(self.image, self.rect)
+
+    def explode(self):
+        if self.death_animation_repitition >= len(self.death_animation_list) * 3:
+            self.kill()
+            drawText(
+                "Game over!",
+                WHITE,
+                (SCREEN_CENTER),
+                (SCREEN_HEIGHT / 2),
+            )
+            drawText(
+                "Press any key to restart",
+                WHITE,
+                SCREEN_CENTER,
+                (SCREEN_HEIGHT + 50) / 2,
+            )
+            return
+        
+        ANIMATION_COOLDOWN = 100
+
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.death_animation_frame_index += 1
+
+        if self.death_animation_frame_index >= len(self.death_animation_list):
+            self.death_animation_frame_index = 0
+
+        self.image = self.death_animation_list[self.death_animation_frame_index]
+
+        if (
+            self.death_animation_frame_index
+            == len(self.death_animation_list) - 1
+        ):
+            self.death_animation_repitition += 1
 
     def update(self):
         dx = 0
         dy = 0
 
         if self.char_type == "player":
+
+            if not self.alive:
+                self.explode()
+                return
+
             # Player controls
             if moving_up and self.rect.y > 0:
                 dy = self.speed * -1
@@ -135,21 +188,34 @@ class Car(pygame.sprite.Sprite):
 
             if self.rect.y > SCREEN_HEIGHT:
                 self.kill()
-                player.score += 5
+                player.addScore()
 
         self.rect.x += dx
         self.rect.y += dy
 
+    def addScore(self, score=5):
+        if not self.alive:
+            return
+
+        self.score += score
+
+    def reset(self):
+        self.image = self.get_alive_image()
+        self.rect.y = SCREEN_HEIGHT - self.image.get_height()
+        self.rect.x = SCREEN_CENTER
+        self.alive = True
+        self.death_animation_repitition = 0
+        enemy_group.empty()
+        player.lives = 2
+        player.score = 0
+        set_initial_values()
+
     def check_collision(self):
         if pygame.sprite.spritecollide(self, enemy_group, False):
+            self.alive = False
             self.lives -= 1
-            enemy_group.empty()
-            self.rect.y = SCREEN_HEIGHT - self.image.get_height()
-            self.rect.x = SCREEN_CENTER
 
             if self.lives == 0:
-                self.alive = False
-                self.kill()
                 drawText(
                     "Game over!",
                     WHITE,
@@ -157,29 +223,27 @@ class Car(pygame.sprite.Sprite):
                     (SCREEN_HEIGHT / 2),
                 )
                 drawText(
-                    "Press any key to exit.",
+                    "Press any key to restart.",
                     WHITE,
                     SCREEN_CENTER,
                     (SCREEN_HEIGHT + 50) / 2,
                 )
-    
+
     def curse(self):
         if self.isGoodDriver:
             return
-        
+
         if not hasattr(self, "curseChoice"):
             self.curseChoice = random.choices(curses)[0]
 
         self.vision = pygame.Rect(0, 0, 150, self.rect.h)
         self.vision.center = (self.rect.x + 10, self.rect.y + 100)
-        
+
         # draw vision to see the collision
         # pygame.draw.rect(screen, (255, 0, 0), self.vision)
-        
+
         if self.vision.colliderect(player.rect):
             drawText(self.curseChoice, WHITE, self.rect.x, self.rect.y - 20)
-
-
 
 
 enemy_group = pygame.sprite.Group()
@@ -187,6 +251,11 @@ enemy_cooldown = 0
 enemy_cooldown_reducing_val = 1
 enemy_speed = 2
 
+def set_initial_values():
+    global enemy_cooldown, enemy_cooldown_reducing_val, enemy_speed
+    enemy_cooldown = 0
+    enemy_cooldown_reducing_val = 1
+    enemy_speed = 2
 
 def create_enemies():
     global enemy_cooldown, enemy_cooldown_reducing_val, enemy_speed
@@ -220,22 +289,25 @@ while run:
 
     draw_bg()
 
-    if not player.alive:
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                run = False
-        continue
-
     player.update()
     player.draw()
 
-    create_enemies()
-    enemy_group.update()
-    enemy_group.draw(screen)
+    if player.alive:
+        create_enemies()
+        enemy_group.update()
+        enemy_group.draw(screen)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+
+        if not player.alive:
+            moving_up = moving_down = moving_left = moving_right = False
+
+            if event.type == pygame.KEYDOWN:
+                player.reset()
+
+            continue
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w or event.key == pygame.K_UP:
