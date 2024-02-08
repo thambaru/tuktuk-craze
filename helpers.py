@@ -20,6 +20,7 @@ def resource_path(relative_path):
 
 
 IMAGES_DIR = resource_path("assets/images")
+FONTS_DIR = resource_path("assets/fonts")
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("TukTuk Craze")
@@ -49,13 +50,13 @@ curses = [
 ]
 
 
-def create_font(size, font_name="Comic Sans MS"):
-    return pygame.font.SysFont(font_name, size)
+def create_font(size, font_name="comic"):
+    return pygame.font.Font(resource_path(f"{FONTS_DIR}/{font_name}.ttf"), size)
 
 
 default_font = create_font(20)
-credits_font = create_font(15, "Courier New")
-game_over_font = create_font(50, "Courier New")
+credits_font = create_font(15, "cour")
+game_over_font = create_font(50, "cour")
 
 
 def drawText(text, color=WHITE, x=0, y=0, font=default_font, draw=True):
