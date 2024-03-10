@@ -2,30 +2,20 @@ import pygame
 import random
 import os
 import helpers
-
-pygame.init()
+import road
 
 
 def draw_bg():
     helpers.screen.fill(helpers.BG)
-    Road().draw()
+    road.Road().draw()
     helpers.drawTextWithBg(f"SCORE: {player.score}", 20, 20)
 
 
-class Road:
-    def __init__(self, scale=2):
-        self.image = pygame.image.load(f"{helpers.IMAGES_DIR}/road.png").convert_alpha()
-        self.image = helpers.get_scaled_image(self.image, scale)
-        self.scale = scale
-
-    def draw(self):
-        img_x = (helpers.SCREEN_CENTER) - (self.image.get_width() * self.scale // 2)
-        img_y = 0
-        for i in range(helpers.SCREEN_HEIGHT // self.image.get_height() + 1):
-            img_y = i * self.image.get_height()
-            helpers.screen.blit(
-                helpers.get_scaled_image(self.image, self.scale), (img_x, img_y)
-            )
+def play_background_music():
+    if player.alive and helpers.game_background_sound.get_num_channels() == 0:
+        helpers.game_background_sound.play(-1)
+        helpers.game_background_sound.set_volume(0.5)
+        helpers.tuktuk_running_sound.play(-1)
 
 
 class Car(pygame.sprite.Sprite):
@@ -80,6 +70,7 @@ class Car(pygame.sprite.Sprite):
                 (helpers.SCREEN_CENTER - 100),
                 (helpers.SCREEN_HEIGHT - 50),
             )
+
             return
 
         ANIMATION_COOLDOWN = 100
@@ -157,15 +148,21 @@ class Car(pygame.sprite.Sprite):
         self.rect.x = helpers.SCREEN_CENTER
         self.alive = True
         self.death_animation_repitition = 0
-        helpers.enemy_group.empty()
         player.lives = 2
         player.score = 0
+        play_background_music()
+        helpers.enemy_group.empty()
         helpers.set_initial_values()
 
     def check_collision(self):
         if pygame.sprite.spritecollide(self, helpers.enemy_group, False):
             self.alive = False
             self.lives -= 1
+            
+            if helpers.game_over_sound.get_num_channels() == 0:
+                helpers.tuktuk_running_sound.stop()
+                helpers.game_background_sound.stop()
+                helpers.game_over_sound.play()
 
     def curse(self):
         if self.isGoodDriver:
@@ -184,6 +181,8 @@ class Car(pygame.sprite.Sprite):
             helpers.drawText(
                 self.curseChoice, helpers.WHITE, self.rect.x, self.rect.y - 25
             )
+            if helpers.car_horn_sound.get_num_channels() == 0:
+                helpers.car_horn_sound.play()
 
 
 def create_enemies():
@@ -215,6 +214,7 @@ player = Car("player", helpers.SCREEN_CENTER, helpers.SCREEN_HEIGHT - 70, 0.8, 5
 
 def execute_game():
     draw_bg()
+    play_background_music()
 
     player.update()
     player.draw()
@@ -226,9 +226,9 @@ def execute_game():
 
     for event in pygame.event.get():
         if not player.alive:
-            helpers.moving_up = (
-                helpers.moving_down
-            ) = helpers.moving_left = helpers.moving_right = False
+            helpers.moving_up = helpers.moving_down = helpers.moving_left = (
+                helpers.moving_right
+            ) = False
 
             if event.type == pygame.KEYDOWN and event.key != pygame.K_ESCAPE:
                 player.reset()

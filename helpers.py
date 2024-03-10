@@ -3,11 +3,12 @@ import os
 import sys
 
 pygame.init()
+pygame.mixer.init()
+pygame.mixer.set_num_channels(64)
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.8)
 SCREEN_CENTER = SCREEN_WIDTH // 2
-
 
 def resource_path(relative_path):
     try:
@@ -20,6 +21,7 @@ def resource_path(relative_path):
 
 
 IMAGES_DIR = resource_path("assets/images")
+AUDIO_DIR = resource_path("assets/audio")
 FONTS_DIR = resource_path("assets/fonts")
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -52,10 +54,19 @@ curses = [
     "Onna onna balagena!!",
 ]
 
+def get_audio(audio_name):
+    return pygame.mixer.Sound(resource_path(f"{AUDIO_DIR}/{audio_name}.mp3"))
+
+
+intro_sound = get_audio("intro")
+game_background_sound = get_audio("background_noise")
+tuktuk_running_sound = get_audio("tuktuk_running")
+car_horn_sound = get_audio("car_horn")
+game_over_sound = get_audio("game_over")
+
 
 def create_font(size, font_name="comic"):
     return pygame.font.Font(resource_path(f"{FONTS_DIR}/{font_name}.ttf"), size)
-
 
 default_font = create_font(20)
 credits_font = create_font(15, "cour")
