@@ -225,6 +225,9 @@ def execute_game():
         helpers.enemy_group.draw(helpers.screen)
 
     for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+                helpers.run = False
+                
         if not player.alive:
             helpers.moving_up = helpers.moving_down = helpers.moving_left = (
                 helpers.moving_right

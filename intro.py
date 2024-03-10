@@ -18,7 +18,7 @@ def show_intro():
         helpers.BLACK,
     )
     helpers.drawText(
-        "Created by: Group 06 - American Corner, Matara",
+        "Created by: Thambaru Wijesekara <thambaru.com>",
         helpers.GRAY,
         20,
         helpers.SCREEN_HEIGHT - 50,
