@@ -25,6 +25,9 @@ FONTS_DIR = resource_path("assets/fonts")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("TukTuk Craze")
 
+icon = pygame.image.load(resource_path("assets/game.ico"))
+pygame.display.set_icon(icon)
+
 clock = pygame.time.Clock()
 FPS = 60
 
