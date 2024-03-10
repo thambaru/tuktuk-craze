@@ -14,6 +14,8 @@ while helpers.run:
         intro.show_intro()
 
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                helpers.run = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     helpers.run = False
@@ -24,7 +26,5 @@ while helpers.run:
                     while ignition_playing.get_busy():
                         pass
                     helpers.intro_shown = True
-            if event.type == pygame.QUIT:
-                helpers.run = False
 
 pygame.quit()
